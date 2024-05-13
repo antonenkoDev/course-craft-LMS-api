@@ -33,7 +33,7 @@ export class TenantConnectionService {
 
   async getTenants() {
     return this.organizationRepository.find({
-      select: ['databaseName', 'customerId'],
+      select: ['databaseName', 'label'],
     });
   }
 
@@ -43,27 +43,27 @@ export class TenantConnectionService {
       const newDataSource = await this.initializeTenantDataSource(
         tenant.databaseName,
       );
-      this.addTenantToConnectionMap(tenant.customerId, newDataSource);
+      await this.addTenantToConnectionMap(tenant.label, newDataSource);
     }
   }
 
-  public async getTenantConnection(customerId: string): Promise<DataSource> {
+  public async getTenantConnection(label: string): Promise<DataSource> {
     // First, check if the connection for the tenant already exists.
-    let dataSource = this.connectionMap.get(customerId);
+    let dataSource = this.connectionMap.get(label);
     if (dataSource) {
       return dataSource;
     }
 
     // If the connection does not exist, retrieve the organization info.
     const organization = await this.organizationRepository.findOne({
-      where: { customerId: customerId },
+      where: { label: label },
       select: ['databaseName'],
     });
 
     // If the organization is not found or doesn't have a databaseName, throw an error.
     if (!organization || !organization.databaseName) {
       throw new Error(
-        `Organization with customer ID ${customerId} not found or missing database name.`,
+        `Organization with label ${label} not found or missing database name.`,
       );
     }
 
@@ -79,7 +79,7 @@ export class TenantConnectionService {
     // await dataSource.runMigrations();
 
     // Store the new DataSource in the connection map.
-    this.addTenantToConnectionMap(customerId, dataSource);
+    await this.addTenantToConnectionMap(label, dataSource);
 
     return dataSource;
   }
@@ -93,7 +93,7 @@ export class TenantConnectionService {
     newDataSource = await newDataSource.initialize();
     await newDataSource.runMigrations({ transaction: 'all', fake: false });
     // await newDataSource.undoLastMigration();
-    this.addTenantToConnectionMap(databaseName, newDataSource);
+    await this.addTenantToConnectionMap(databaseName, newDataSource);
     return newDataSource;
   }
 

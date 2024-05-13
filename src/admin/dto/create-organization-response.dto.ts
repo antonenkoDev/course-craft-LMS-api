@@ -1,6 +1,6 @@
 import { Organization } from '../entities/organization.admin.entity';
 import { ApiProperty } from '@nestjs/swagger';
-import { User } from '../../user/entities/user.entity';
+import { User } from '../../user/entities/user.admin.entity';
 
 export class CreateOrganizationResponseDto {
   @ApiProperty()

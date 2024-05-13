@@ -9,7 +9,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Course } from './entities/course.entity';
 import { TENANT_DATASOURCE } from 'src/database/providers/tenant.provider';
 import { CreateCourseDto } from './dto/create-course.dto';
-import { User } from 'src/user/entities/user.entity';
+import { User } from 'src/user/entities/user.admin.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class CourseService {
@@ -47,7 +47,6 @@ export class CourseService {
     const newCourse = new Course();
     newCourse.title = createCourseDto.title;
     newCourse.description = createCourseDto.description;
-    newCourse.userOwner = userOwner;
 
     return this.courseRepository.save(newCourse);
   }

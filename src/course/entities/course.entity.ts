@@ -1,6 +1,6 @@
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { Lesson } from 'src/lesson/entities/lesson.entity';
-import { User } from 'src/user/entities/user.entity';
+import { User } from 'src/user/entities/user.admin.entity';
 import {
   Column,
   CreateDateColumn,
@@ -42,8 +42,4 @@ export class Course {
 
   @OneToMany(() => Lesson, (lesson) => lesson.course, { cascade: true })
   lessons: Lesson[];
-
-  @ManyToOne(() => User, (user) => user.courses)
-  @JoinColumn({ name: 'user_uuid' })
-  userOwner: User;
 }

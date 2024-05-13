@@ -1,20 +1,23 @@
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User } from './entities/user.admin.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Auth0Service } from '../auth0/auth0.service';
 import { REQUEST } from '@nestjs/core';
 import { TENANT_DATASOURCE } from '../database/providers/tenant.provider';
 import { HsRequest } from '../interfaces/hs-request.interface';
 import { ConfigService } from '@nestjs/config';
+import { ADMIN_DATA_SOURCE } from '../admin/providers/database.providers';
+import { Organization } from '../admin/entities/organization.admin.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class UserService {
-  userRepository: Repository<User>;
+  private readonly userRepository: Repository<User>;
+  private readonly organizationRepository: Repository<Organization>;
   private readonly logger = new Logger(this.constructor.name);
 
   constructor(
-    @Inject(TENANT_DATASOURCE)
+    @Inject(ADMIN_DATA_SOURCE)
     private dataSource: DataSource,
     private auth0Service: Auth0Service,
     @Inject(REQUEST) private request: HsRequest,
@@ -22,6 +25,7 @@ export class UserService {
   ) {
     this.logger.log('USER SERVICE initialized');
     this.userRepository = dataSource.getRepository(User);
+    this.organizationRepository = dataSource.getRepository(Organization);
   }
 
   async findAll(options?: { isActive: boolean }) {
@@ -42,20 +46,32 @@ export class UserService {
         this.configService.get<string>('AUTH0_CONNECTION_NAME'),
       // phone_number: createUserDto.phone,
     });
-
-    await this.addUserToAuth0Organization(
-      auth0UserId,
-      options?.auth0OrganizationId ??
-        this.request.organization.auth0OrganizationId,
-    );
-
     const newUser: User = this.userRepository.create(createUserDto);
-    newUser.idpId = auth0UserId;
     newUser.isActive = true;
     return this.userRepository.save(newUser);
   }
 
-  async addUserToAuth0Organization(auth0UserId, auth0OrganizationId) {
+  async createUserInOrganization(
+    createUserDto: CreateUserDto,
+    options?: { connectionName?: string; organizationId?: string },
+  ) {
+    const user = await this.create(createUserDto, options);
+    const organization = await this.organizationRepository.findOneBy({
+      uuid: options?.organizationId,
+    });
+
+    await this.addUserToAuth0Organization(
+      user.uuid,
+      organization.auth0OrganizationId,
+    );
+    user.organizations.push(organization);
+    return await this.userRepository.save(user);
+  }
+
+  async addUserToAuth0Organization(
+    auth0UserId: string,
+    auth0OrganizationId: string,
+  ) {
     return await this.auth0Service.addUserToOrganization(
       auth0UserId,
       auth0OrganizationId,

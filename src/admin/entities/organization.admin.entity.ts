@@ -1,6 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsAlphanumeric, IsLowercase } from 'class-validator';
+import { User } from '../../user/entities/user.admin.entity';
 
 @Entity()
 export class Organization {
@@ -11,7 +12,8 @@ export class Organization {
   @ApiProperty()
   @IsLowercase()
   @IsAlphanumeric('en-US')
-  customerId: string;
+  // The same as subdomain of an organization
+  label: string;
 
   @Column({ unique: true })
   @ApiProperty()
@@ -22,4 +24,7 @@ export class Organization {
 
   @Column({ unique: true })
   auth0OrganizationId: string;
+
+  @ManyToMany(() => User, (user) => user.organizations)
+  users: User[];
 }

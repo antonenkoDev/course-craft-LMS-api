@@ -36,12 +36,23 @@ export class AdminService {
     createOrganizationDto: CreateOrganizationDto,
   ): Promise<CreateOrganizationResponseDto> {
     const auth0OrganizationId = await this.createAuth0Organization({
-      name: createOrganizationDto.customerId.toLowerCase(),
+      name: createOrganizationDto.label.toLowerCase(),
       displayName: createOrganizationDto.name,
       connections: createOrganizationDto.allowedAuthTypes,
     });
     const newDataSource = await this.createOrganizationDatabase(
-      createOrganizationDto.customerId,
+      createOrganizationDto.label,
+    );
+
+    const organization = this.organizationRepository.create();
+    organization.auth0OrganizationId = auth0OrganizationId;
+    organization.label = createOrganizationDto.label;
+    organization.name = createOrganizationDto.name;
+    organization.databaseName = this.generateDatabaseName(
+      createOrganizationDto.label,
+    );
+    const addedOrganization = await this.organizationRepository.save(
+      organization,
     );
 
     const adminUser = createOrganizationDto.adminUser;
@@ -51,31 +62,25 @@ export class AdminService {
       this.request,
       this.configService,
     );
-    const addedAdminUser = await userService.create(adminUser, {
-      auth0OrganizationId,
-    });
-
-    const organization = this.organizationRepository.create();
-    organization.auth0OrganizationId = auth0OrganizationId;
-    organization.customerId = createOrganizationDto.customerId;
-    organization.name = createOrganizationDto.name;
-    organization.databaseName = this.generateDatabaseName(
-      createOrganizationDto.customerId,
+    const addedAdminUser = await userService.createUserInOrganization(
+      adminUser,
+      {
+        organizationId: addedOrganization.uuid,
+      },
     );
-
     return {
-      organization: await this.organizationRepository.save(organization),
+      organization: addedOrganization,
       adminUser: addedAdminUser,
     };
   }
 
-  generateDatabaseName(customerId: string) {
-    return `org_${customerId}`;
+  generateDatabaseName(label: string) {
+    return `org_${label}`;
   }
 
-  async createOrganizationDatabase(customerId: string) {
+  async createOrganizationDatabase(label: string) {
     //Promise<DataSource>
-    const databaseName = this.generateDatabaseName(customerId);
+    const databaseName = this.generateDatabaseName(label);
     const existingDatabases = await this.adminDataSource.query(
       `SELECT datname FROM pg_database WHERE datname='${databaseName}'`,
     );
@@ -95,7 +100,7 @@ export class AdminService {
 
     // Теперь добавляем новый DataSource в карту соединений
     await this.tenantConnectionService.addTenantToConnectionMap(
-      customerId,
+      label,
       newDataSource,
     );
 
@@ -119,11 +124,9 @@ export class AdminService {
     });
   }
 
-  public async getOrganization(
-    customerId: string,
-  ): Promise<Organization> | null {
+  public async getOrganization(label: string): Promise<Organization> | null {
     return await this.organizationRepository.findOne({
-      where: { customerId: customerId.toLowerCase() },
+      where: { label: label.toLowerCase() },
     });
   }
 

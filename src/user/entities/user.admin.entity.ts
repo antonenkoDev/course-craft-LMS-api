@@ -1,14 +1,12 @@
 import {
   Column,
   Entity,
+  JoinTable,
   ManyToMany,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { WorkModeEnum } from '../enums/work-mode.enum';
-import { Tag } from '../../tag/entities/tag.entity';
-import { Course } from 'src/course/entities/course.entity';
+import { Organization } from '../../admin/entities/organization.admin.entity';
 
 @Entity()
 export class User {
@@ -16,7 +14,7 @@ export class User {
   uuid: string;
 
   @Column({ nullable: true })
-  idpId: string;
+  auth0Id: string;
 
   @Column({ nullable: true })
   isActive: boolean;
@@ -46,24 +44,10 @@ export class User {
   gender: number;
 
   @ApiPropertyOptional()
-  @Column({ type: 'date', nullable: true })
-  firstDay?: Date;
-
-  @ApiPropertyOptional()
-  @Column({ type: 'date', nullable: true })
-  lastDay?: Date;
-
-  @ApiPropertyOptional()
   @Column({ nullable: true })
   timezone?: string;
 
-  @ManyToMany(() => Tag, (tags) => tags.users)
-  tags?: Tag[];
-
-  @ApiPropertyOptional()
-  @Column({ type: 'integer', nullable: true })
-  workMode?: WorkModeEnum;
-
-  @OneToMany(() => Course, (course) => course.userOwner)
-  courses: Course[];
+  @ManyToMany(() => Organization, (organization) => organization.users)
+  @JoinTable()
+  organizations: Organization[];
 }
