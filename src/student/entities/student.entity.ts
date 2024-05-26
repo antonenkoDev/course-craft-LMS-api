@@ -1,13 +1,14 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { Course } from 'src/course/entities/course.entity';
 
 @Entity()
 export class Student {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @ApiProperty()
   @Column()
+  @ApiProperty()
   //links to Admin Database User
   userId: string;
 
@@ -18,4 +19,8 @@ export class Student {
   @Column()
   @ApiProperty()
   lastName: string;
+
+  @ManyToMany(() => Course, course => course.students)
+  @JoinTable()
+  courses: Course[];
 }

@@ -1,11 +1,13 @@
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { Lesson } from 'src/lesson/entities/lesson.entity';
+import { Student } from 'src/student/entities/student.entity';
 import { User } from 'src/user/entities/user.admin.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -42,4 +44,7 @@ export class Course {
 
   @OneToMany(() => Lesson, (lesson) => lesson.course, { cascade: true })
   lessons: Lesson[];
+
+  @ManyToMany(() => Student, student => student.courses)
+  students: Student[];
 }

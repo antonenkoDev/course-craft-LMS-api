@@ -15,6 +15,8 @@ import { TenantConnectionService } from './database/tenant-connection.service';
 import { CourseModule } from './course/course.module';
 import { LessonModule } from './lesson/lesson.module';
 import { StudentModule } from './student/student.module';
+import { WorkerModule } from './worker/worker.module';
+import { EnrollmentModule } from './enrollment/enrollment.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { StudentModule } from './student/student.module';
     CourseModule,
     LessonModule,
     StudentModule,
+    WorkerModule,
+    EnrollmentModule,
   ],
   controllers: [AppController],
   providers: [AppService, TenantIdentificationMiddleware],
